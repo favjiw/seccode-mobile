@@ -1,0 +1,10 @@
+{
+  "id": "M1-01",
+  "category": "M1: Improper Credential Usage",
+  "cwe": "CWE-798",
+  "title": "Client-Side HMAC Secret JWT Signing",
+  "description": "The Flutter client signs JSON Web Tokens (JWT) locally inside a controller using a hardcoded HMAC symmetric secret key ('SecretKey'). Because the secret resides in the compiled Dart snapshot, any attacker can extract it and forge arbitrary session claims.",
+  "attack_vector": "An adversary decompiles the APK using jadx or blutter to inspect libapp.so string pools, extracts the SecretKey literal, and mints forged admin/parent JWTs with elevated privileges.",
+  "fix_rationale": "Never embed JWT signing keys in mobile client binaries. Delegate token issuance and cryptographic signing exclusively to an authenticated backend endpoint over TLS.",
+  "expected_rule_id": "M1_JWT_SECRET_HARDCODED"
+}

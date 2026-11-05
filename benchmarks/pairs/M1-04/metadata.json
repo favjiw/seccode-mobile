@@ -1,0 +1,10 @@
+{
+  "id": "M1-04",
+  "category": "M1: Improper Credential Usage",
+  "cwe": "CWE-259",
+  "title": "Hardcoded Credentials in Login Form Controller",
+  "description": "A Vibe-Coded login screen controller initializes `TextEditingController` instances with hardcoded default passwords (`password123456`), shipping developer test credentials into production builds.",
+  "attack_vector": "Users or attackers launching the application or inspecting the compiled binary discover pre-populated administrative or test account credentials that remain active on the production backend.",
+  "fix_rationale": "Initialize all authentication `TextEditingController` fields empty (`TextEditingController()`) and enforce strict separation between development seed data and production builds.",
+  "expected_rule_id": "M1_DEFAULT_FORM_CREDENTIALS"
+}

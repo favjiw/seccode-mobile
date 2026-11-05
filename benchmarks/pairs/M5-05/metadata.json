@@ -1,0 +1,10 @@
+{
+  "id": "M5-05",
+  "category": "M5: Insecure Communication",
+  "cwe": "CWE-319",
+  "title": "WebSocket Connection Over Plaintext ws:// Instead of wss://",
+  "description": "Real-time alert streaming connects via `WebSocketChannel.connect(Uri.parse('ws://...'))` using unencrypted WebSocket transport instead of TLS-protected `wss://`.",
+  "attack_vector": "Network adversaries along the routing path inspect cleartext WebSocket upgrade headers and frames, stealing session tokens or injecting fabricated parental alert events into the live stream.",
+  "fix_rationale": "Always establish WebSocket channels over TLS using the `wss://` scheme (`Uri.parse('wss://...')`).",
+  "expected_rule_id": "M5_INSECURE_WEBSOCKET"
+}

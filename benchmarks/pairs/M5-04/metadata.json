@@ -1,0 +1,10 @@
+{
+  "id": "M5-04",
+  "category": "M5: Insecure Communication",
+  "cwe": "CWE-295",
+  "title": "Trusting All SSL Certificates via badCertificateCallback",
+  "description": "A custom `HttpClient` overrides `badCertificateCallback` to unconditionally return `true`, completely disabling X.509 certificate chain and hostname verification across all HTTPS requests.",
+  "attack_vector": "An attacker uses mitmproxy or Burp Suite with a self-signed certificate to intercept TLS traffic; because `badCertificateCallback` returns `true`, the Flutter app blindly accepts the rogue certificate.",
+  "fix_rationale": "Never return `true` unconditionally in `badCertificateCallback`. Validate certificates against the system trust store or enforce SPKI/certificate pinning for known backend hosts.",
+  "expected_rule_id": "M5_BAD_CERT_CALLBACK"
+}

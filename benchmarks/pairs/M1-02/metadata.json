@@ -1,0 +1,10 @@
+{
+  "id": "M1-02",
+  "category": "M1: Improper Credential Usage",
+  "cwe": "CWE-540",
+  "title": "Bundling .env Configuration File in pubspec.yaml Assets",
+  "description": "The application declares the local '.env' secret file under the 'flutter: assets:' section of pubspec.yaml, causing all environment secrets to be packaged unencrypted inside the APK's flutter_assets/ directory.",
+  "attack_vector": "An attacker unzips the distributed APK (`unzip app-release.apk assets/flutter_assets/.env`) and reads production API keys, database URLs, and service secrets in plaintext.",
+  "fix_rationale": "Remove '.env' from pubspec.yaml assets and inject non-sensitive runtime configuration via compile-time `--dart-define-from-file` or retrieve short-lived credentials from a backend vault.",
+  "expected_rule_id": "M1_ENV_ASSET_BUNDLING"
+}

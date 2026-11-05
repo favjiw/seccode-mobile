@@ -1,0 +1,8 @@
+name: benchmark_m9_03
+description: Vibe coding anomaly benchmark case (remediated).
+version: 1.0.0+1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_secure_storage: ^9.0.0

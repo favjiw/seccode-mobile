@@ -1,0 +1,10 @@
+{
+  "id": "M5-01",
+  "category": "M5: Insecure Communication",
+  "cwe": "CWE-319",
+  "title": "Global Cleartext Traffic Allowed in AndroidManifest.xml",
+  "description": "The Android application manifest sets `android:usesCleartextTraffic=\"true\"` on the `<application>` tag without a restricting `network_security_config.xml`, permitting arbitrary unencrypted HTTP connections.",
+  "attack_vector": "A Man-in-the-Middle (MitM) attacker on a shared Wi-Fi network performs ARP spoofing or DNS hijacking to downgrade or intercept unencrypted HTTP traffic transmitted by the app.",
+  "fix_rationale": "Set `android:usesCleartextTraffic=\"false\"` in `AndroidManifest.xml` and attach an explicit `@xml/network_security_config` enforcing HTTPS/TLS across all domains.",
+  "expected_rule_id": "M5_CLEARTEXT_TRAFFIC"
+}

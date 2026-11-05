@@ -1,0 +1,10 @@
+{
+  "id": "M9-02",
+  "category": "M9: Insecure Data Storage",
+  "cwe": "CWE-312",
+  "title": "Plaintext User PII Stored in Unencrypted GetStorage",
+  "description": "Sensitive Personally Identifiable Information (PII), including child profile records and national IDs, is written to GetX `GetStorage` (`box.write('user_pii', ...)`), which stores raw unencrypted JSON on disk.",
+  "attack_vector": "Forensic extraction or malware with storage access reads the `GetStorage.gs` JSON container directly from the application document directory, exposing sensitive family and minor PII.",
+  "fix_rationale": "Store sensitive PII in `FlutterSecureStorage` or encrypt the local storage payload with an AES-256-GCM key sealed inside Android Keystore / iOS Keychain.",
+  "expected_rule_id": "M9_PLAINTEXT_GET_STORAGE_PII"
+}

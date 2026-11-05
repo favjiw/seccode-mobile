@@ -1,0 +1,10 @@
+{
+  "id": "M9-01",
+  "category": "M9: Insecure Data Storage",
+  "cwe": "CWE-312",
+  "title": "Plaintext Authentication Token Stored in SharedPreferences",
+  "description": "Session bearer tokens are persisted directly in `SharedPreferences` (`prefs.setString('token', token)`), which writes unencrypted XML files to `/data/data/<package>/shared_prefs/`.",
+  "attack_vector": "On a rooted device, via ADB backup extraction, or through local file-read vulnerabilities, an attacker reads the plaintext XML file and steals long-lived bearer tokens to hijack the user account.",
+  "fix_rationale": "Persist authentication tokens exclusively in `FlutterSecureStorage` backed by Android Keystore (`EncryptedSharedPreferences`) and iOS Keychain.",
+  "expected_rule_id": "M9_PLAINTEXT_SHARED_PREFS_TOKEN"
+}

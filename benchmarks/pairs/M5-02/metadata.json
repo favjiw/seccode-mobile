@@ -1,0 +1,10 @@
+{
+  "id": "M5-02",
+  "category": "M5: Insecure Communication",
+  "cwe": "CWE-319",
+  "title": "Screenshot and Photo Upload via Plain HTTP to Raw IP",
+  "description": "Sensitive child device screenshots and activity photos are uploaded over unencrypted `http://` directly to a hardcoded public IPv4 address (`http://34.124.175.184:8080/upload`).",
+  "attack_vector": "Passive network observers on ISP links, cellular towers, or local Wi-Fi capture multipart HTTP POST payloads in transit, reconstructing private screenshots of minor users in violation of UU PDP.",
+  "fix_rationale": "Transmit all media uploads exclusively over HTTPS (`https://`) to a certificate-validated domain name with TLS 1.3 encryption.",
+  "expected_rule_id": "M5_PLAINTEXT_HTTP_URL"
+}

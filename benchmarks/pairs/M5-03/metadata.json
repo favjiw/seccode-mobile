@@ -1,0 +1,10 @@
+{
+  "id": "M5-03",
+  "category": "M5: Insecure Communication",
+  "cwe": "CWE-306",
+  "title": "Public MQTT Broker (broker.emqx.io) Without TLS or Authentication",
+  "description": "The background monitoring service connects to a public multi-tenant MQTT broker (`broker.emqx.io`) on cleartext port 1883 without TLS or client authentication to exchange device control commands.",
+  "attack_vector": "Any external actor can subscribe to wildcard topics on `broker.emqx.io` to eavesdrop on telemetry or publish forged commands that remotely disable child monitoring protections.",
+  "fix_rationale": "Deploy a dedicated private MQTT broker enforcing TLS on port 8883 (`..secure = true`) with per-device client certificate or username/token ACL authentication.",
+  "expected_rule_id": "M5_UNAUTHENTICATED_MQTT"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "M9-05",
+  "category": "M9: Insecure Data Storage",
+  "cwe": "CWE-732",
+  "title": "Storing Authentication Token in Unencrypted Local File",
+  "description": "The application writes raw authentication tokens directly into a plaintext file (`auth_token.txt`) on local/external storage via `File('.../auth_token.txt').writeAsString(token)`.",
+  "attack_vector": "Any process with shared storage access, ADB backup capability, or media-store read access can read `auth_token.txt` and compromise the authenticated session.",
+  "fix_rationale": "Eliminate raw file persistence for credentials and store session tokens exclusively inside `FlutterSecureStorage`.",
+  "expected_rule_id": "M9_INSECURE_LOCAL_FILE_TOKEN"
+}

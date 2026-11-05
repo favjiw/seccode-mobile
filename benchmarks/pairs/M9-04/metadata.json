@@ -1,0 +1,10 @@
+{
+  "id": "M9-04",
+  "category": "M9: Insecure Data Storage",
+  "cwe": "CWE-312",
+  "title": "Unencrypted SQLite Database Storing Biometric Templates and PIN Hashes",
+  "description": "The application opens a standard unencrypted SQLite database via `openDatabase('auth_vault.db', ...)` to store parental control PIN hashes and biometric verification metadata without SQLCipher encryption.",
+  "attack_vector": "An attacker pulls `auth_vault.db` from device storage to perform offline GPU hash cracking on the PIN or overwrite the row with a known PIN hash to bypass parental lock screens.",
+  "fix_rationale": "Use `sqflite_sqlcipher` with a 256-bit encryption key retrieved from `FlutterSecureStorage` (`openDatabase(..., password: dbEncryptionKey)`).",
+  "expected_rule_id": "M9_UNENCRYPTED_SQLITE_SENSITIVE"
+}

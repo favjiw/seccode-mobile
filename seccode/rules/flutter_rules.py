@@ -122,6 +122,20 @@ FLUTTER_RULES: List[SecurityRule] = [
             "and promote insecure user behavior."
         ),
     ),
+    SecurityRule(
+        rule_id="M1_HARDCODED_API_SECRET",
+        category=OWASPCategory.M1,
+        cwe_id="CWE-798",
+        title="Hardcoded Third-Party API Secret Key in Dart Service",
+        description="Sensitive third-party API secret keys (e.g., payment gateway or AI service secret key) are hardcoded directly in client Dart code.",
+        severity=Severity.CRITICAL,
+        file_pattern=r"\.dart$",
+        regex_pattern=r"(?:apiSecret|secretKey|apiKey|stripeSecret|openaiKey)\s*=\s*['\"](?:sk_api_secret_[0-9a-zA-Z_]+|sk_live_[0-9a-zA-Z_]+|sk-[0-9a-zA-Z_]{16,}|AIza[0-9A-Za-z_\-]{20,})['\"]",
+        xai_rationale=(
+            "Embedding third-party secret keys inside a Flutter client binary allows attackers "
+            "to extract the key via strings/jadx analysis and abuse billing quotas or access backend customer records directly."
+        ),
+    ),
 
     # M5: Insecure Communication
     SecurityRule(
@@ -166,6 +180,34 @@ FLUTTER_RULES: List[SecurityRule] = [
             "to listen in, inject control messages, or remotely disable security functions without authorization."
         ),
     ),
+    SecurityRule(
+        rule_id="M5_BAD_CERT_CALLBACK",
+        category=OWASPCategory.M5,
+        cwe_id="CWE-295",
+        title="Improper Certificate Validation (Trusting All SSL Certificates)",
+        description="HttpClient configures badCertificateCallback to unconditionally return true, disabling TLS certificate verification.",
+        severity=Severity.CRITICAL,
+        file_pattern=r"\.dart$",
+        regex_pattern=r"badCertificateCallback\s*=\s*\([^)]*\)\s*=>\s*true",
+        xai_rationale=(
+            "Unconditionally returning true in badCertificateCallback disables X.509 certificate chain and hostname verification. "
+            "Any active Man-in-the-Middle (MitM) attacker on public Wi-Fi can present a self-signed certificate and intercept encrypted traffic."
+        ),
+    ),
+    SecurityRule(
+        rule_id="M5_INSECURE_WEBSOCKET",
+        category=OWASPCategory.M5,
+        cwe_id="CWE-319",
+        title="Unencrypted WebSocket Channel (ws:// instead of wss://)",
+        description="WebSocket communication is established over plaintext ws:// protocol rather than TLS-encrypted wss://.",
+        severity=Severity.HIGH,
+        file_pattern=r"\.dart$",
+        regex_pattern=r"WebSocketChannel\.connect\s*\(\s*Uri\.parse\s*\(\s*['\"]ws://[^'\"]+['\"]\s*\)\s*\)",
+        xai_rationale=(
+            "Establishing real-time WebSocket streams over ws:// transmits session events, alerts, and tokens in cleartext "
+            "across the network, allowing packet sniffers and MitM proxies to eavesdrop or inject forged frames."
+        ),
+    ),
 
     # M9: Insecure Data Storage
     SecurityRule(
@@ -180,6 +222,48 @@ FLUTTER_RULES: List[SecurityRule] = [
         xai_rationale=(
             "SharedPreferences stores data in an unencrypted XML file on the device. On rooted devices, via ADB backup, "
             "or via device exploits, any application or physical possessor can retrieve valid authentication tokens."
+        ),
+    ),
+    SecurityRule(
+        rule_id="M9_PLAINTEXT_GET_STORAGE_PII",
+        category=OWASPCategory.M9,
+        cwe_id="CWE-312",
+        title="Plaintext User PII Stored in Unencrypted GetStorage Container",
+        description="Personally Identifiable Information (PII) or sensitive profile data is persisted in unencrypted GetStorage.",
+        severity=Severity.HIGH,
+        file_pattern=r"\.dart$",
+        regex_pattern=r"box\.write\s*\(\s*['\"](?:user_pii|nik|child_profile|ssn|credit_card)['\"]\s*,\s*[^)]+\)",
+        xai_rationale=(
+            "GetStorage persists key-value pairs as unencrypted JSON on the local filesystem. Storing sensitive PII such as "
+            "national IDs (NIK) or child profiles exposes user data to local extraction and violates UU PDP protection standards."
+        ),
+    ),
+    SecurityRule(
+        rule_id="M9_UNENCRYPTED_SQLITE_SENSITIVE",
+        category=OWASPCategory.M9,
+        cwe_id="CWE-312",
+        title="Unencrypted SQLite Database Storing Biometric or PIN Hashes",
+        description="Local SQLite database stores sensitive authentication secrets (PIN hashes or biometric templates) without SQLCipher encryption.",
+        severity=Severity.HIGH,
+        file_pattern=r"\.dart$",
+        regex_pattern=r"openDatabase\s*\(\s*['\"][a-zA-Z0-9_]+\.db['\"]\s*,\s*version:\s*\d+\s*,\s*onCreate:\s*\([^)]*\)\s*=>\s*db\.execute\s*\(\s*['\"]CREATE\s+TABLE\s+[^'\"]*(?:pin_hash|biometric_template)[^'\"]*['\"]\s*\)\s*\)",
+        xai_rationale=(
+            "Standard sqflite openDatabase creates an unencrypted SQLite file on disk. Storing PIN hashes or biometric metadata "
+            "without SQLCipher encryption enables offline brute-force attacks or hash replacement if the device storage is accessed."
+        ),
+    ),
+    SecurityRule(
+        rule_id="M9_INSECURE_LOCAL_FILE_TOKEN",
+        category=OWASPCategory.M9,
+        cwe_id="CWE-732",
+        title="Storing Authentication Token in Unencrypted Local File",
+        description="Authentication tokens or session secrets are written directly to a plaintext file on local/external storage.",
+        severity=Severity.HIGH,
+        file_pattern=r"\.dart$",
+        regex_pattern=r"File\s*\([^)]*(?:auth_token|session_secret|credentials)\.(?:txt|json)['\"]\s*\)\.writeAsString\s*\([^)]+\)",
+        xai_rationale=(
+            "Writing authentication tokens to raw local or external files bypasses hardware-backed keystore isolation "
+            "and risks exposing credentials to backup utilities, file managers, or co-resident apps when permissions are lax."
         ),
     ),
 

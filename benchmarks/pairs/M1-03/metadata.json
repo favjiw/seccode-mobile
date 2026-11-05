@@ -1,0 +1,10 @@
+{
+  "id": "M1-03",
+  "category": "M1: Improper Credential Usage",
+  "cwe": "CWE-798",
+  "title": "Hardcoded Static Authorization Token and Identity UUIDs",
+  "description": "API service classes define a hardcoded static bearer token (`static const _token = '1'`) and static identity UUIDs for authenticating backend requests across all installed client instances.",
+  "attack_vector": "Attackers inspect client code or intercept a single request to learn the static authorization token and UUID, enabling unauthorized access to any family or child monitoring record on the API.",
+  "fix_rationale": "Eliminate static tokens and hardcoded UUIDs. Provision per-session, cryptographically random OAuth2/JWT bearer tokens stored in hardware-backed secure storage.",
+  "expected_rule_id": "M1_STATIC_AUTH_TOKEN"
+}

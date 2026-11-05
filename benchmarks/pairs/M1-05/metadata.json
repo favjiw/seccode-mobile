@@ -1,0 +1,10 @@
+{
+  "id": "M1-05",
+  "category": "M1: Improper Credential Usage",
+  "cwe": "CWE-798",
+  "title": "Hardcoded Third-Party API Secret Key in Dart Service",
+  "description": "A Dart service embeds a live third-party secret key (`sk_live_...`) directly in client source code to authenticate billing and AI moderation calls directly from the handset.",
+  "attack_vector": "Extracting strings from the compiled Flutter binary reveals the `sk_live_` master secret key, allowing adversaries to issue unauthorized refunds, read customer billing records, or exhaust API quotas.",
+  "fix_rationale": "Route third-party API operations requiring secret keys through a trusted backend proxy that issues scoped, ephemeral client tokens.",
+  "expected_rule_id": "M1_HARDCODED_API_SECRET"
+}

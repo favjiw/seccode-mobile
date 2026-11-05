@@ -1,0 +1,490 @@
+{
+  "benchmark_name": "SecCode Mobile Ghera-Style OWASP Benchmark (M1, M5, M9)",
+  "timestamp": "2026-11-05 13:11:58",
+  "total_pairs": 15,
+  "total_test_executions": 30,
+  "duration_seconds": 0.0074,
+  "overall_metrics": {
+    "TP": 15,
+    "FP": 0,
+    "TN": 15,
+    "FN": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "accuracy": 1.0,
+    "false_positive_rate": 0.0,
+    "total_patches_generated": 15,
+    "syntax_valid_patches": 15,
+    "guards_passed_patches": 15,
+    "rescan_passed_patches": 15,
+    "plausible_patches": 15,
+    "plausibility_rate": 100.0
+  },
+  "category_breakdown": {
+    "M1": {
+      "category": "M1: Improper Credential Usage",
+      "cases": 5,
+      "TP": 5,
+      "FN": 0,
+      "TN": 5,
+      "FP": 0,
+      "patches_generated": 5,
+      "patches_plausible": 5,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "plausibility_rate": 100.0
+    },
+    "M5": {
+      "category": "M5: Insecure Communication",
+      "cases": 5,
+      "TP": 5,
+      "FN": 0,
+      "TN": 5,
+      "FP": 0,
+      "patches_generated": 5,
+      "patches_plausible": 5,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "plausibility_rate": 100.0
+    },
+    "M9": {
+      "category": "M9: Insecure Data Storage",
+      "cases": 5,
+      "TP": 5,
+      "FN": 0,
+      "TN": 5,
+      "FP": 0,
+      "patches_generated": 5,
+      "patches_plausible": 5,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "plausibility_rate": 100.0
+    }
+  },
+  "cases": [
+    {
+      "id": "M1-01",
+      "category": "M1",
+      "category_full": "M1: Improper Credential Usage",
+      "cwe": "CWE-798",
+      "title": "Client-Side HMAC Secret JWT Signing",
+      "expected_rule_id": "M1_JWT_SECRET_HARDCODED",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M1_JWT_SECRET_HARDCODED"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.64,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/lib/controllers/jwt_session_controller.dart\n+++ b/lib/controllers/jwt_session_controller.dart\n@@ -1,4 +1,4 @@\n     // Sign JWT on client using hardcoded symmetric secret\n\n-    var dataToken = jwt.sign(SecretKey('snailly'));\n\n+    var dataToken = await authApiService.requestSessionToken(data);\n\n     // Return signed token string\n\n     return dataToken;"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.2
+      }
+    },
+    {
+      "id": "M1-02",
+      "category": "M1",
+      "category_full": "M1: Improper Credential Usage",
+      "cwe": "CWE-540",
+      "title": "Bundling .env Configuration File in pubspec.yaml Assets",
+      "expected_rule_id": "M1_ENV_ASSET_BUNDLING",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M1_ENV_ASSET_BUNDLING"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.18,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/pubspec.yaml\n+++ b/pubspec.yaml\n@@ -1,2 +1,2 @@\n     - assets/images/logo.png\n\n-    - .env\n+    # - .env (Removed to prevent credential bundling in assets)"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.08
+      }
+    },
+    {
+      "id": "M1-03",
+      "category": "M1",
+      "category_full": "M1: Improper Credential Usage",
+      "cwe": "CWE-798",
+      "title": "Hardcoded Static Authorization Token and Identity UUIDs",
+      "expected_rule_id": "M1_STATIC_AUTH_TOKEN",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M1_STATIC_AUTH_TOKEN"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.31,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/lib/services/parental_control_api.dart\n+++ b/lib/services/parental_control_api.dart\n@@ -1,3 +1,3 @@\n   // Vulnerable hardcoded static authorization token and UUID\n\n-  static const _token = '1';\n\n+  Future<String?> get _token async => await secureStorage.read(key: 'auth_token');\n\n   static const _parentUuid = '550e8400-e29b-41d4-a716-446655440000';\n"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.12
+      }
+    },
+    {
+      "id": "M1-04",
+      "category": "M1",
+      "category_full": "M1: Improper Credential Usage",
+      "cwe": "CWE-259",
+      "title": "Hardcoded Credentials in Login Form Controller",
+      "expected_rule_id": "M1_DEFAULT_FORM_CREDENTIALS",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M1_DEFAULT_FORM_CREDENTIALS"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.36,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/lib/controllers/login_form_controller.dart\n+++ b/lib/controllers/login_form_controller.dart\n@@ -1,4 +1,4 @@\n   // Pre-filled default password left in controller initialization\n\n-  final passwordController = TextEditingController(text: 'password123456');\n\n+  final passwordController = TextEditingController();\n\n   // Default state flags for login form\n\n   final bool rememberMe = false;"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.12
+      }
+    },
+    {
+      "id": "M1-05",
+      "category": "M1",
+      "category_full": "M1: Improper Credential Usage",
+      "cwe": "CWE-798",
+      "title": "Hardcoded Third-Party API Secret Key in Dart Service",
+      "expected_rule_id": "M1_HARDCODED_API_SECRET",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M1_HARDCODED_API_SECRET"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.39,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/lib/services/billing_gateway_service.dart\n+++ b/lib/services/billing_gateway_service.dart\n@@ -1,4 +1,4 @@\n   // Hardcoded third-party live secret key in client Dart service\n\n-  static const String apiSecret = 'sk_api_secret_snailly_prod_99281';\n\n+  static const String apiSecret = const String.fromEnvironment('API_SECRET_KEY');\n\n   // Service timeout configuration\n\n   static const int timeoutSeconds = 30;"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.13
+      }
+    },
+    {
+      "id": "M5-01",
+      "category": "M5",
+      "category_full": "M5: Insecure Communication",
+      "cwe": "CWE-319",
+      "title": "Global Cleartext Traffic Allowed in AndroidManifest.xml",
+      "expected_rule_id": "M5_CLEARTEXT_TRAFFIC",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M5_CLEARTEXT_TRAFFIC"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.24,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/android/app/src/main/AndroidManifest.xml\n+++ b/android/app/src/main/AndroidManifest.xml\n@@ -1,4 +1,5 @@\n         android:label=\"Snailly\"\n\n-        android:usesCleartextTraffic=\"true\"\n\n+        android:usesCleartextTraffic=\"false\"\n\n+        android:networkSecurityConfig=\"@xml/network_security_config\"\n\n         android:icon=\"@mipmap/ic_launcher\">\n\n     </application>"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.12
+      }
+    },
+    {
+      "id": "M5-02",
+      "category": "M5",
+      "category_full": "M5: Insecure Communication",
+      "cwe": "CWE-319",
+      "title": "Screenshot and Photo Upload via Plain HTTP to Raw IP",
+      "expected_rule_id": "M5_PLAINTEXT_HTTP_URL",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M5_PLAINTEXT_HTTP_URL"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.32,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/lib/services/screenshot_uploader.dart\n+++ b/lib/services/screenshot_uploader.dart\n@@ -1,4 +1,4 @@\n     // Plaintext HTTP upload to raw remote IP address\n\n-    const uploadUrl = 'http://34.124.175.184:8080/upload';\n\n+    const uploadUrl = 'https://api.snailly.id/upload';\n\n     // Return endpoint for multipart image transmission\n\n     return '$uploadUrl/$childId';"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.13
+      }
+    },
+    {
+      "id": "M5-03",
+      "category": "M5",
+      "category_full": "M5: Insecure Communication",
+      "cwe": "CWE-306",
+      "title": "Public MQTT Broker (broker.emqx.io) Without TLS or Authentication",
+      "expected_rule_id": "M5_UNAUTHENTICATED_MQTT",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M5_UNAUTHENTICATED_MQTT"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.3,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/lib/services/mqtt_command_bus.dart\n+++ b/lib/services/mqtt_command_bus.dart\n@@ -1,4 +1,4 @@\n     // Connect to public unauthenticated MQTT broker over cleartext\n\n-    _client = MqttServerClient('broker.emqx.io', 'flutter_client');\n\n+    _client = MqttServerClient.withPort('mqtt.snailly.id', clientId, 8883)..secure = true;\n\n     // Client initialized without TLS or credentials\n\n     return _client;"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.11
+      }
+    },
+    {
+      "id": "M5-04",
+      "category": "M5",
+      "category_full": "M5: Insecure Communication",
+      "cwe": "CWE-295",
+      "title": "Trusting All SSL Certificates via badCertificateCallback",
+      "expected_rule_id": "M5_BAD_CERT_CALLBACK",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M5_BAD_CERT_CALLBACK"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.24,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/lib/network/tls_http_client.dart\n+++ b/lib/network/tls_http_client.dart\n@@ -1,4 +1,4 @@\n     // Vulnerable: Trusts all self-signed or tampered SSL certificates\n\n-    client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;\n\n+    client.badCertificateCallback = (X509Certificate cert, String host, int port) => false;\n\n     // Return configured HttpClient\n\n     return client;"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.12
+      }
+    },
+    {
+      "id": "M5-05",
+      "category": "M5",
+      "category_full": "M5: Insecure Communication",
+      "cwe": "CWE-319",
+      "title": "WebSocket Connection Over Plaintext ws:// Instead of wss://",
+      "expected_rule_id": "M5_INSECURE_WEBSOCKET",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M5_INSECURE_WEBSOCKET"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.37,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/lib/services/realtime_alert_socket.dart\n+++ b/lib/services/realtime_alert_socket.dart\n@@ -1,4 +1,4 @@\n     // Vulnerable: Unencrypted ws:// WebSocket stream\n\n-    final channel = WebSocketChannel.connect(Uri.parse('ws://stream.snailly.id:9001/alerts'));\n\n+    final channel = WebSocketChannel.connect(Uri.parse('wss://stream.snailly.id:9001/alerts'));\n\n     // Return active WebSocket channel\n\n     return channel;"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.11
+      }
+    },
+    {
+      "id": "M9-01",
+      "category": "M9",
+      "category_full": "M9: Insecure Data Storage",
+      "cwe": "CWE-312",
+      "title": "Plaintext Authentication Token Stored in SharedPreferences",
+      "expected_rule_id": "M9_PLAINTEXT_SHARED_PREFS_TOKEN",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M9_PLAINTEXT_SHARED_PREFS_TOKEN"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.33,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/lib/storage/auth_token_prefs.dart\n+++ b/lib/storage/auth_token_prefs.dart\n@@ -1,4 +1,4 @@\n     // Vulnerable: Saves bearer token in plaintext SharedPreferences XML\n\n-    await prefs.setString('token', token);\n\n+    await secureStorage.write(key: 'token', value: token);\n\n     // Token persisted without encryption\n\n     return true;"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.11
+      }
+    },
+    {
+      "id": "M9-02",
+      "category": "M9",
+      "category_full": "M9: Insecure Data Storage",
+      "cwe": "CWE-312",
+      "title": "Plaintext User PII Stored in Unencrypted GetStorage",
+      "expected_rule_id": "M9_PLAINTEXT_GET_STORAGE_PII",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M9_PLAINTEXT_GET_STORAGE_PII"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.32,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/lib/storage/pii_cache_box.dart\n+++ b/lib/storage/pii_cache_box.dart\n@@ -1,4 +1,4 @@\n     // Vulnerable: Persists sensitive user PII in unencrypted GetStorage container\n\n-    await box.write('user_pii', serializedPii);\n\n+    await secureStorage.write(key: 'user_pii', value: serializedPii);\n\n     // JSON written to disk in cleartext\n\n     return true;"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.11
+      }
+    },
+    {
+      "id": "M9-03",
+      "category": "M9",
+      "category_full": "M9: Insecure Data Storage",
+      "cwe": "CWE-1078",
+      "title": "Vibe Coding Anomaly: flutter_secure_storage Declared in pubspec.yaml With Zero Imports in lib/",
+      "expected_rule_id": "M9_UNUSED_SECURE_STORAGE_ANOMALY",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M9_UNUSED_SECURE_STORAGE_ANOMALY"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.16,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/pubspec.yaml\n+++ b/pubspec.yaml\n@@ -1,2 +1,2 @@\n-  flutter_secure_storage: ^8.0.0\n\n-  # Declared in pubspec but 0 imports in lib/\n+  flutter_secure_storage: ^9.0.0\n\n+  # Remediated: Imported and bound FlutterSecureStorage in lib/storage/secure_token_vault.dart"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.11
+      }
+    },
+    {
+      "id": "M9-04",
+      "category": "M9",
+      "category_full": "M9: Insecure Data Storage",
+      "cwe": "CWE-312",
+      "title": "Unencrypted SQLite Database Storing Biometric Templates and PIN Hashes",
+      "expected_rule_id": "M9_UNENCRYPTED_SQLITE_SENSITIVE",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M9_UNENCRYPTED_SQLITE_SENSITIVE"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.32,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/lib/database/biometric_sqlite_vault.dart\n+++ b/lib/database/biometric_sqlite_vault.dart\n@@ -1,4 +1,4 @@\n     // Vulnerable: Unencrypted SQLite database storing sensitive pin_hash and biometric_template\n\n-    final db = await openDatabase('auth_vault.db', version: 1, onCreate: (db, v) => db.execute('CREATE TABLE vault (id INT, pin_hash TEXT, biometric_template TEXT)'));\n\n+    final db = await openDatabase('auth_vault.db', password: dbEncryptionKey, version: 1, onCreate: (db, v) => db.execute('CREATE TABLE vault (id INT, pin_hash TEXT, biometric_template TEXT)'));\n\n     // Database file remains unencrypted on disk\n\n     return db;"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.13
+      }
+    },
+    {
+      "id": "M9-05",
+      "category": "M9",
+      "category_full": "M9: Insecure Data Storage",
+      "cwe": "CWE-732",
+      "title": "Storing Authentication Token in Unencrypted Local File",
+      "expected_rule_id": "M9_INSECURE_LOCAL_FILE_TOKEN",
+      "vulnerable_run": {
+        "findings_count": 1,
+        "detected_rules": [
+          "M9_INSECURE_LOCAL_FILE_TOKEN"
+        ],
+        "verdict": "TP",
+        "duration_ms": 0.33,
+        "patch_generated": true,
+        "syntax_valid": true,
+        "guards_passed": true,
+        "rescan_passed": true,
+        "patch_plausible": true,
+        "patch_diff": "--- a/lib/storage/local_file_token_store.dart\n+++ b/lib/storage/local_file_token_store.dart\n@@ -1,4 +1,4 @@\n     // Vulnerable: Writes session token directly to plaintext local file\n\n-    await File('$baseDir/auth_token.txt').writeAsString(token);\n\n+    await secureStorage.write(key: 'auth_token', value: token);\n\n     // File stored without hardware keystore protection\n\n     return true;"
+      },
+      "safe_run": {
+        "findings_count": 0,
+        "detected_rules": [],
+        "verdict": "TN",
+        "duration_ms": 0.11
+      }
+    }
+  ]
+}

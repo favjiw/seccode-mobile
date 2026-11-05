@@ -1,0 +1,10 @@
+{
+  "id": "M9-03",
+  "category": "M9: Insecure Data Storage",
+  "cwe": "CWE-1078",
+  "title": "Vibe Coding Anomaly: flutter_secure_storage Declared in pubspec.yaml With Zero Imports in lib/",
+  "description": "The project declares `flutter_secure_storage` in `pubspec.yaml` dependencies (often after an AI prompt to 'make storage secure'), but zero Dart files in `lib/` ever import or invoke it, leaving all runtime storage calls on unencrypted legacy mechanisms.",
+  "attack_vector": "Developers and superficial dependency scanners assume credentials are encrypted at rest because `flutter_secure_storage` appears in `pubspec.yaml`, while actual tokens remain exposed in cleartext storage.",
+  "fix_rationale": "Import `package:flutter_secure_storage/flutter_secure_storage.dart` in the storage service layer and verify that all sensitive read/write call sites actively invoke `FlutterSecureStorage`.",
+  "expected_rule_id": "M9_UNUSED_SECURE_STORAGE_ANOMALY"
+}

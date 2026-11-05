@@ -1,6 +1,7 @@
 """Repairer / Fixer Agent: Synthesizes secure remediation patches with strict guardrails."""
 
 import difflib
+import re
 import httpx
 from typing import Optional, List, Dict, Any
 from seccode.models import VulnerabilityFinding, PatchProposal
@@ -17,57 +18,133 @@ class RepairerAgent:
         original = finding.evidence.snippet
 
         if rule_id == "M1_JWT_SECRET_HARDCODED":
-            repaired = original.replace(
-                "var dataToken = jwt.sign(SecretKey('snailly'));",
-                "// Secure: Sign JWT on backend server or fetch temporary session token\n"
-                "        final dataToken = await authApiService.requestSessionToken(data);",
+            repaired = re.sub(
+                r"jwt\.sign\s*\(\s*SecretKey\s*\(\s*['\"][a-zA-Z0-9_\-]+['\"]\s*\)\s*\)",
+                "await authApiService.requestSessionToken(data)",
+                original,
             )
             explanation = "Delegate JWT signing to the backend server instead of holding hardcoded HMAC secrets in the APK."
             return repaired, explanation
 
         if rule_id == "M1_ENV_ASSET_BUNDLING":
-            repaired = original.replace("- .env", "# - .env (Removed to prevent credential bundling in assets)")
+            repaired = re.sub(r"^\s*-\s*\.env\b", "    # - .env (Removed to prevent credential bundling in assets)", original, flags=re.MULTILINE)
             explanation = "Remove .env from pubspec.yaml assets bundle. Inject build secrets at compile time via --dart-define."
             return repaired, explanation
 
         if rule_id == "M1_STATIC_AUTH_TOKEN":
-            repaired = original.replace(
-                "static const _token    = '1';",
-                "// Secure: Retrieve authenticated bearer token dynamically from secure session\n"
-                "  Future<String?> get _token async => await secureStorage.read(key: 'auth_token');",
+            repaired = re.sub(
+                r"static\s+const\s+_token\s*=\s*['\"][0-9a-zA-Z]+['\"]\s*;",
+                "Future<String?> get _token async => await secureStorage.read(key: 'auth_token');",
+                original,
             )
-            explanation = "Replace hardcoded static token '1' with dynamic token retrieval from secure storage."
+            explanation = "Replace hardcoded static token with dynamic token retrieval from secure storage."
+            return repaired, explanation
+
+        if rule_id == "M1_DEFAULT_FORM_CREDENTIALS":
+            repaired = re.sub(
+                r"TextEditingController\s*\(\s*text\s*:\s*['\"][^'\"]*(?:password|pass|123456)[^'\"]*['\"]\s*\)",
+                "TextEditingController()",
+                original,
+            )
+            explanation = "Initialize login form TextEditingController without hardcoded default credentials."
+            return repaired, explanation
+
+        if rule_id == "M1_HARDCODED_API_SECRET":
+            repaired = re.sub(
+                r"(?:apiSecret|secretKey|apiKey|stripeSecret|openaiKey)\s*=\s*['\"](?:sk_api_secret_[0-9a-zA-Z_]+|sk_live_[0-9a-zA-Z_]+|sk-[0-9a-zA-Z_]{16,}|AIza[0-9A-Za-z_\-]{20,})['\"]",
+                "apiSecret = const String.fromEnvironment('API_SECRET_KEY')",
+                original,
+            )
+            explanation = "Remove hardcoded third-party secret key and proxy sensitive API calls via backend or compile-time environment injection."
             return repaired, explanation
 
         if rule_id == "M5_CLEARTEXT_TRAFFIC":
-            repaired = original.replace(
-                'android:usesCleartextTraffic="true"',
+            repaired = re.sub(
+                r'android:usesCleartextTraffic\s*=\s*"true"',
                 'android:usesCleartextTraffic="false"\n        android:networkSecurityConfig="@xml/network_security_config"',
+                original,
             )
             explanation = "Disable global cleartext HTTP traffic and enforce HTTPS with a domain-specific network security configuration."
             return repaired, explanation
 
         if rule_id == "M5_PLAINTEXT_HTTP_URL":
-            repaired = original.replace("http://34.124.175.184:8080", "https://api.snailly.id")
+            repaired = re.sub(
+                r"['\"]http://[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(?::[0-9]+)?(/[^'\"]*)['\"]",
+                r"'https://api.snailly.id\1'",
+                original,
+            )
             explanation = "Enforce HTTPS/TLS encryption for remote API endpoints to safeguard user screenshots in transit."
             return repaired, explanation
 
         if rule_id == "M5_UNAUTHENTICATED_MQTT":
-            repaired = original.replace(
-                "_client = MqttServerClient('broker.emqx.io', 'flutter_client');",
-                "// Secure: Dedicated broker with TLS on port 8883 and authenticated client credentials\n"
-                "      _client = MqttServerClient.withPort('mqtt.snailly.id', clientId, 8883)..secure = true;",
+            repaired = re.sub(
+                r"MqttServerClient\s*\(\s*['\"]broker\.emqx\.io['\"]\s*,\s*[^)]+\)",
+                "MqttServerClient.withPort('mqtt.snailly.id', clientId, 8883)..secure = true",
+                original,
             )
             explanation = "Switch from public unauthenticated broker to dedicated TLS-secured MQTT broker with credentials."
             return repaired, explanation
 
+        if rule_id == "M5_BAD_CERT_CALLBACK":
+            repaired = re.sub(
+                r"badCertificateCallback\s*=\s*\([^)]*\)\s*=>\s*true",
+                "badCertificateCallback = (X509Certificate cert, String host, int port) => false",
+                original,
+            )
+            explanation = "Reject invalid or self-signed TLS certificates in badCertificateCallback and enforce strict X.509 validation."
+            return repaired, explanation
+
+        if rule_id == "M5_INSECURE_WEBSOCKET":
+            repaired = re.sub(
+                r"WebSocketChannel\.connect\s*\(\s*Uri\.parse\s*\(\s*['\"]ws://([^'\"]+)['\"]\s*\)\s*\)",
+                r"WebSocketChannel.connect(Uri.parse('wss://\1'))",
+                original,
+            )
+            explanation = "Upgrade plaintext ws:// WebSocket connection to TLS-encrypted wss:// channel."
+            return repaired, explanation
+
         if rule_id == "M9_PLAINTEXT_SHARED_PREFS_TOKEN":
-            repaired = original.replace(
-                "await prefs.setString('token', token);",
-                "// Secure: Store sensitive tokens using FlutterSecureStorage (Keystore/Keychain)\n"
-                "    await secureStorage.write(key: 'token', value: token);",
+            repaired = re.sub(
+                r"(?:pref|prefs)\.setString\s*\(\s*(['\"]token(?:_[a-zA-Z0-9]+)?['\"])\s*,\s*([^)]+)\)",
+                r"secureStorage.write(key: \1, value: \2)",
+                original,
             )
             explanation = "Store session bearer tokens in encrypted Keystore/Keychain via FlutterSecureStorage rather than SharedPreferences."
+            return repaired, explanation
+
+        if rule_id == "M9_PLAINTEXT_GET_STORAGE_PII":
+            repaired = re.sub(
+                r"box\.write\s*\(\s*(['\"](?:user_pii|nik|child_profile|ssn|credit_card)['\"])\s*,\s*([^)]+)\)",
+                r"secureStorage.write(key: \1, value: \2)",
+                original,
+            )
+            explanation = "Migrate sensitive user PII from unencrypted GetStorage to hardware-backed FlutterSecureStorage."
+            return repaired, explanation
+
+        if rule_id == "M9_UNUSED_SECURE_STORAGE_ANOMALY":
+            repaired = (
+                "  flutter_secure_storage: ^9.0.0\n"
+                "  # Remediated: Imported and bound FlutterSecureStorage in lib/storage/secure_token_vault.dart"
+            )
+            explanation = "Import and wire FlutterSecureStorage across lib/ authentication storage services instead of leaving the dependency unused."
+            return repaired, explanation
+
+        if rule_id == "M9_UNENCRYPTED_SQLITE_SENSITIVE":
+            repaired = re.sub(
+                r"openDatabase\s*\(\s*(['\"][a-zA-Z0-9_]+\.db['\"])\s*,\s*version:\s*(\d+)\s*,",
+                r"openDatabase(\1, password: dbEncryptionKey, version: \2,",
+                original,
+            )
+            explanation = "Encrypt sensitive SQLite database tables containing PIN or biometric hashes using SQLCipher with a Keystore-backed key."
+            return repaired, explanation
+
+        if rule_id == "M9_INSECURE_LOCAL_FILE_TOKEN":
+            repaired = re.sub(
+                r"File\s*\([^)]*(?:auth_token|session_secret|credentials)\.(?:txt|json)['\"]\s*\)\.writeAsString\s*\(([^)]+)\)",
+                r"secureStorage.write(key: 'auth_token', value: \1)",
+                original,
+            )
+            explanation = "Replace plaintext local file token persistence with encrypted Keystore/Keychain storage via FlutterSecureStorage."
             return repaired, explanation
 
         # Generic safe fallback

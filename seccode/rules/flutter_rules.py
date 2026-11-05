@@ -1,0 +1,237 @@
+"""Deterministic static rules for Flutter and Android mobile security patterns (OWASP Mobile Top 10)."""
+
+import re
+from typing import List, Dict, Any, Optional
+from seccode.models import OWASPCategory, Severity
+
+
+class SecurityRule:
+    def __init__(
+        self,
+        rule_id: str,
+        category: OWASPCategory,
+        cwe_id: str,
+        title: str,
+        description: str,
+        severity: Severity,
+        file_pattern: str,
+        regex_pattern: str,
+        xai_rationale: str,
+    ):
+        self.rule_id = rule_id
+        self.category = category
+        self.cwe_id = cwe_id
+        self.title = title
+        self.description = description
+        self.severity = severity
+        self.file_pattern = re.compile(file_pattern, re.IGNORECASE)
+        self.regex = re.compile(regex_pattern, re.MULTILINE)
+        self.xai_rationale = xai_rationale
+
+    def scan_file(self, file_path: str, content: str) -> List[Dict[str, Any]]:
+        matches = []
+        if not self.file_pattern.search(file_path):
+            return matches
+
+        lines = content.splitlines()
+        for match in self.regex.finditer(content):
+            start_pos = match.start()
+            # Calculate line numbers
+            line_start = content[:start_pos].count("\n") + 1
+            matched_text = match.group(0).strip()
+            line_end = line_start + matched_text.count("\n")
+            
+            # Context snippet
+            snippet_lines = lines[max(0, line_start - 2): min(len(lines), line_end + 2)]
+            snippet = "\n".join(snippet_lines)
+
+            matches.append({
+                "rule_id": self.rule_id,
+                "category": self.category,
+                "cwe_id": self.cwe_id,
+                "title": self.title,
+                "description": self.description,
+                "severity": self.severity,
+                "file_path": file_path,
+                "line_start": line_start,
+                "line_end": line_end,
+                "snippet": snippet,
+                "matched_text": matched_text,
+                "xai_rationale": self.xai_rationale,
+            })
+        return matches
+
+
+# Registry of rules
+FLUTTER_RULES: List[SecurityRule] = [
+    # M1: Improper Credential Usage
+    SecurityRule(
+        rule_id="M1_JWT_SECRET_HARDCODED",
+        category=OWASPCategory.M1,
+        cwe_id="CWE-798",
+        title="Hardcoded JWT Secret Key in Client Code",
+        description="JWT tokens are signed on the mobile client using a hardcoded, single-word secret key.",
+        severity=Severity.CRITICAL,
+        file_pattern=r"\.dart$",
+        regex_pattern=r"SecretKey\s*\(\s*['\"][a-zA-Z0-9_\-]+['\"]\s*\)",
+        xai_rationale=(
+            "Signing JWTs on the mobile client requires the secret key to be embedded in the application binary. "
+            "Reverse-engineering the APK/IPA instantly yields the secret, enabling adversaries to forge arbitrary tokens "
+            "and hijack parental control or authorization claims."
+        ),
+    ),
+    SecurityRule(
+        rule_id="M1_ENV_ASSET_BUNDLING",
+        category=OWASPCategory.M1,
+        cwe_id="CWE-540",
+        title="Environment File Bundled as Public Flutter Asset",
+        description="The .env configuration file is declared as an asset in pubspec.yaml, making it extractable from the compiled APK.",
+        severity=Severity.HIGH,
+        file_pattern=r"pubspec\.yaml$",
+        regex_pattern=r"^\s*-\s*\.env\b",
+        xai_rationale=(
+            "Assets declared in pubspec.yaml are packaged unencrypted in the Flutter asset bundle. "
+            "Any API keys, backend URLs, or secrets stored in .env become accessible to anyone decompiling the APK."
+        ),
+    ),
+    SecurityRule(
+        rule_id="M1_STATIC_AUTH_TOKEN",
+        category=OWASPCategory.M1,
+        cwe_id="CWE-798",
+        title="Static Authorization Token or Hardcoded Identity UUID",
+        description="Static authorization tokens (e.g. token '1') or hardcoded UUIDs are used for sensitive API requests.",
+        severity=Severity.HIGH,
+        file_pattern=r"\.dart$",
+        regex_pattern=r"static\s+const\s+_token\s*=\s*['\"][0-9a-zA-Z]+['\"]",
+        xai_rationale=(
+            "Using static authorization tokens allows attackers to bypass backend validation trivially. "
+            "Combined with hardcoded UUIDs, all instances of the application share a single identity."
+        ),
+    ),
+    SecurityRule(
+        rule_id="M1_DEFAULT_FORM_CREDENTIALS",
+        category=OWASPCategory.M1,
+        cwe_id="CWE-259",
+        title="Hardcoded Credentials in Form Controllers",
+        description="Login form controllers are initialized with default passwords or email accounts.",
+        severity=Severity.MEDIUM,
+        file_pattern=r"\.dart$",
+        regex_pattern=r"TextEditingController\s*\(\s*text\s*:\s*['\"][^'\"]*(?:password|pass|123456)[^'\"]*['\"]\s*\)",
+        xai_rationale=(
+            "Hardcoded default passwords in form controllers risk exposing test or administrative credentials in production "
+            "and promote insecure user behavior."
+        ),
+    ),
+
+    # M5: Insecure Communication
+    SecurityRule(
+        rule_id="M5_CLEARTEXT_TRAFFIC",
+        category=OWASPCategory.M5,
+        cwe_id="CWE-319",
+        title="Android Cleartext Traffic Permitted Globally",
+        description="AndroidManifest.xml permits unencrypted HTTP cleartext traffic without network security config restrictions.",
+        severity=Severity.CRITICAL,
+        file_pattern=r"AndroidManifest\.xml$",
+        regex_pattern=r'android:usesCleartextTraffic\s*=\s*"true"',
+        xai_rationale=(
+            "Allowing cleartext traffic globally permits the application to communicate over unencrypted HTTP, leaving all "
+            "transmitted data, tokens, and payloads vulnerable to interception and modification by local network adversaries (MITM)."
+        ),
+    ),
+    SecurityRule(
+        rule_id="M5_PLAINTEXT_HTTP_URL",
+        category=OWASPCategory.M5,
+        cwe_id="CWE-319",
+        title="Unencrypted HTTP Communication to Remote Endpoint",
+        description="The application communicates with a remote host or IP over plain HTTP instead of HTTPS/TLS.",
+        severity=Severity.CRITICAL,
+        file_pattern=r"\.dart$",
+        regex_pattern=r"['\"]http://[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}(?::[0-9]+)?/[^'\"]*['\"]",
+        xai_rationale=(
+            "Sending data (such as minor user screenshots or surveillance frames) over plain HTTP to a public IP address "
+            "violates child privacy standards and data protection laws (UU PDP), as data is sent unencrypted over the open internet."
+        ),
+    ),
+    SecurityRule(
+        rule_id="M5_UNAUTHENTICATED_MQTT",
+        category=OWASPCategory.M5,
+        cwe_id="CWE-306",
+        title="Public MQTT Broker Without TLS or Authentication",
+        description="MQTT client connects to a public broker (broker.emqx.io) without TLS encryption or credentials.",
+        severity=Severity.CRITICAL,
+        file_pattern=r"\.dart$",
+        regex_pattern=r"MqttServerClient\s*\(\s*['\"]broker\.emqx\.io['\"]",
+        xai_rationale=(
+            "Connecting to a public MQTT broker without credentials or TLS on a predictable topic allows anyone on the internet "
+            "to listen in, inject control messages, or remotely disable security functions without authorization."
+        ),
+    ),
+
+    # M9: Insecure Data Storage
+    SecurityRule(
+        rule_id="M9_PLAINTEXT_SHARED_PREFS_TOKEN",
+        category=OWASPCategory.M9,
+        cwe_id="CWE-312",
+        title="Sensitive Authentication Token Stored in Plaintext SharedPreferences",
+        description="Authentication bearer tokens or sensitive credentials are saved unencrypted in SharedPreferences.",
+        severity=Severity.HIGH,
+        file_pattern=r"\.dart$",
+        regex_pattern=r"(?:pref|prefs)\.setString\s*\(\s*['\"]token(?:_[a-zA-Z0-9]+)?['\"]\s*,\s*[^)]+\)",
+        xai_rationale=(
+            "SharedPreferences stores data in an unencrypted XML file on the device. On rooted devices, via ADB backup, "
+            "or via device exploits, any application or physical possessor can retrieve valid authentication tokens."
+        ),
+    ),
+
+    # M6: Sensitive Logging
+    SecurityRule(
+        rule_id="M6_SENSITIVE_LOGGING",
+        category=OWASPCategory.M6,
+        cwe_id="CWE-532",
+        title="Sensitive Token or Payload Printed to Device Logs",
+        description="Tokens or authorization payloads are logged to console/logcat using print or log().",
+        severity=Severity.LOW,
+        file_pattern=r"\.dart$",
+        regex_pattern=r"(?:print|log)\s*\(\s*['\"][^'\"]*(?:token|jwt)[^'\"]*:\s*\$[^)]+\)",
+        xai_rationale=(
+            "Logging authentication tokens or sensitive user data allows other installed apps with log read permissions "
+            "or anyone with USB debugging enabled to view credentials in the Android logcat."
+        ),
+    ),
+]
+
+
+def check_vibe_coding_anomalies(repo_path: str, files_dict: Dict[str, str]) -> List[Dict[str, Any]]:
+    """Detect architectural vibe-coding anomalies (e.g. declared security dependencies that are never used)."""
+    findings = []
+    pubspec = files_dict.get("pubspec.yaml")
+    if not pubspec:
+        return findings
+
+    # Check for flutter_secure_storage declared but never used in lib/
+    if "flutter_secure_storage:" in pubspec:
+        dart_files = {p: content for p, content in files_dict.items() if p.endswith(".dart") and p.startswith("lib/")}
+        has_import = any("flutter_secure_storage" in content for content in dart_files.values())
+        if not has_import:
+            findings.append({
+                "rule_id": "M9_UNUSED_SECURE_STORAGE_ANOMALY",
+                "category": OWASPCategory.M9,
+                "cwe_id": "CWE-1078",
+                "title": "Unused Security Dependency (Vibe Coding Hallmark)",
+                "description": (
+                    "Package 'flutter_secure_storage' is declared in pubspec.yaml dependencies but is never imported or used "
+                    "in any Dart file across lib/. The application falls back to insecure SharedPreferences."
+                ),
+                "severity": Severity.MEDIUM,
+                "file_path": "pubspec.yaml",
+                "line_start": 26,
+                "line_end": 26,
+                "snippet": "  flutter_secure_storage: ^8.0.0\n  # Declared in pubspec but 0 imports in lib/",
+                "matched_text": "flutter_secure_storage",
+                "xai_rationale": (
+                    "This anomaly is a classic artifact of AI-assisted 'vibe coding': the developer was prompted to install "
+                    "a security package, but the generated business logic continued to implement standard SharedPreferences, "
+                    "leaving the codebase insecure despite having the remediation library already configured."
+                ),
+            })
+    return findings

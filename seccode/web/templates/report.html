@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecCode Audit Report - {{ report.id }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    code, pre { font-family: 'Fira Code', monospace; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-16">
+  <div class="max-w-5xl mx-auto px-4 py-10">
+    <!-- Top Nav -->
+    <div class="flex items-center justify-between border-b border-slate-800 pb-5 mb-8">
+      <div class="flex items-center gap-3">
+        <a href="/" class="text-xs font-medium text-slate-400 hover:text-white transition flex items-center gap-1">
+          ← Back to Dashboard
+        </a>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/api/reports/{{ report.id }}/markdown" target="_blank" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+          Export Markdown
+        </a>
+      </div>
+    </div>
+
+    <!-- Header & Summary Cards -->
+    <div class="mb-8">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+            Audit Report: <span class="text-emerald-400 font-mono text-xl">{{ report.id }}</span>
+          </h1>
+          <p class="text-xs text-slate-400 mt-1">
+            Target: <code class="text-slate-300 bg-slate-900 px-2 py-0.5 rounded">{{ report.repo_path }}</code> • Generated at: {{ report.timestamp }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Metric Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <div class="text-xs text-slate-400 font-medium mb-1">Confirmed Findings</div>
+          <div class="text-3xl font-extrabold text-white">{{ report.metrics.total_confirmed }}</div>
+          <div class="text-[11px] text-slate-500 mt-1">Ground truth verified</div>
+        </div>
+        <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <div class="text-xs text-slate-400 font-medium mb-1">Generated Patches</div>
+          <div class="text-3xl font-extrabold text-cyan-400">{{ report.metrics.total_patches }}</div>
+          <div class="text-[11px] text-slate-500 mt-1">Virtual unified diffs</div>
+        </div>
+        <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <div class="text-xs text-slate-400 font-medium mb-1">Plausible Fix Rate</div>
+          <div class="text-3xl font-extrabold text-emerald-400">{{ report.metrics.plausibility_rate }}%</div>
+          <div class="text-[11px] text-slate-500 mt-1">{{ report.metrics.plausible_patches }} passed Quality Gate</div>
+        </div>
+        <div class="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <div class="text-xs text-slate-400 font-medium mb-1">Execution Time</div>
+          <div class="text-3xl font-extrabold text-amber-400">{{ report.metrics.duration_seconds }}s</div>
+          <div class="text-[11px] text-slate-500 mt-1">Headless analysis</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Findings Section -->
+    <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+      <span>Detailed Findings & Verified Remediations</span>
+      <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">{{ report.findings|length }}</span>
+    </h2>
+
+    <div class="space-y-6">
+      {% for item in report.findings %}
+      {% set patch = report.patches[loop.index0] %}
+      {% set ver = report.verifications[loop.index0] %}
+      
+      <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-lg">
+        <!-- Finding Header -->
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1.5">
+              <span class="px-2.5 py-0.5 rounded-md text-xs font-bold font-mono bg-slate-800 text-slate-200 border border-slate-700">
+                {{ item.id }}
+              </span>
+              <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold 
+                {% if item.severity.value == 'CRITICAL' %}bg-rose-500/10 text-rose-400 border border-rose-500/20
+                {% elif item.severity.value == 'HIGH' %}bg-orange-500/10 text-orange-400 border border-orange-500/20
+                {% else %}bg-amber-500/10 text-amber-400 border border-amber-500/20{% endif %}">
+                {{ item.severity.value }}
+              </span>
+              <span class="text-xs font-mono text-slate-400">{{ item.cwe_id }}</span>
+            </div>
+            <h3 class="text-base font-bold text-white">{{ item.title }}</h3>
+            <p class="text-xs text-slate-400 mt-0.5">{{ item.category.value }}</p>
+          </div>
+          <div>
+            {% if ver.plausible %}
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              ✓ Plausible Remediation
+            </span>
+            {% else %}
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              ⚠️ Manual Review
+            </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Location Badge -->
+        <div class="mb-4">
+          <div class="text-xs text-slate-400 flex items-center gap-1.5">
+            <span>📍 Location:</span>
+            <code class="px-2 py-0.5 rounded bg-slate-950 text-cyan-300 font-mono text-xs border border-slate-800">
+              {{ item.evidence.file_path }}:{{ item.evidence.line_start }}-{{ item.evidence.line_end }}
+            </code>
+          </div>
+        </div>
+
+        <!-- Vulnerable Code Snippet -->
+        <div class="mb-4">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Vulnerable Code Snippet</div>
+          <pre class="bg-slate-950 p-4 rounded-xl text-xs text-rose-200 border border-rose-950/50 overflow-x-auto leading-relaxed"><code>{{ item.evidence.snippet }}</code></pre>
+        </div>
+
+        <!-- XAI Justification -->
+        <div class="mb-4 bg-slate-950/60 p-4 rounded-xl border border-slate-800/80">
+          <div class="text-xs font-semibold text-cyan-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+            <span>🧠 Explainable AI (XAI) Justification</span>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed">{{ item.xai_justification }}</p>
+        </div>
+
+        <!-- Suggested Remediation Patch -->
+        <div class="mb-4">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>🔧 Verified Remediation Patch (Unified Diff)</span>
+            <span class="text-[11px] text-slate-500 font-normal">Strictly Virtual / Not Committed</span>
+          </div>
+          <pre class="bg-slate-950 p-4 rounded-xl text-xs font-mono text-slate-200 border border-slate-800 overflow-x-auto leading-relaxed"><code>{{ patch.diff }}</code></pre>
+          <p class="text-[11px] text-slate-400 mt-1 italic">{{ patch.explanation }}</p>
+        </div>
+
+        <!-- Quality Gate Checklist -->
+        <div class="pt-3 border-t border-slate-800/80">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Deterministic Quality Gate Verification</div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div class="p-2.5 rounded-lg bg-slate-950 text-xs border border-slate-800/80 flex items-center gap-2">
+              <span class="{{ 'text-emerald-400' if ver.syntax_valid else 'text-rose-400' }} font-bold">
+                {{ '✓' if ver.syntax_valid else '✗' }}
+              </span>
+              <span class="text-slate-300">Syntax Integrity</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-950 text-xs border border-slate-800/80 flex items-center gap-2">
+              <span class="{{ 'text-emerald-400' if ver.guards_passed else 'text-rose-400' }} font-bold">
+                {{ '✓' if ver.guards_passed else '✗' }}
+              </span>
+              <span class="text-slate-300">Guardrails (No Cheat)</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-slate-950 text-xs border border-slate-800/80 flex items-center gap-2">
+              <span class="{{ 'text-emerald-400' if ver.rescan_passed else 'text-rose-400' }} font-bold">
+                {{ '✓' if ver.rescan_passed else '✗' }}
+              </span>
+              <span class="text-slate-300">Rescan Evasion Gate</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</body>
+</html>

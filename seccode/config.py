@@ -40,6 +40,7 @@ class EngineConfig(BaseModel):
     
     # Agent 2 (Detector & Explainer): Deep reasoning, evidence grounding, XAI justification
     detector_model: str = os.getenv("SECCODE_DETECTOR_MODEL", "ag/claude-sonnet-5-5-high")
+    argon_model: str = os.getenv("SECCODE_ARGON_MODEL", "ag/gemini-4-argon-high")
     
     # Agent 3 (Repairer / Fixer): High-precision code generation and constraint-adherent patches
     repairer_model: str = os.getenv("SECCODE_REPAIRER_MODEL", "ag/claude-sonnet-5-5-high")

@@ -75,10 +75,53 @@ class RepairerAgent:
         explanation = f"Remediate {finding.title} according to OWASP guidelines."
         return repaired, explanation
 
+    def _generate_llm_fix(self, finding: VulnerabilityFinding) -> Optional[tuple[str, str]]:
+        """Invokes Claude Sonnet 5.5 for high-intelligence remediation synthesis."""
+        prompt = (
+            f"You are a Senior Mobile Security Engineer repairing a Flutter codebase.\n"
+            f"Vulnerability: {finding.title} ({finding.category.value})\n"
+            f"File: {finding.evidence.file_path}:{finding.evidence.line_start}\n"
+            f"Original Code:\n```dart\n{finding.evidence.snippet}\n```\n\n"
+            f"Rules:\n"
+            f"1. Provide a direct, minimal, and secure replacement for the code snippet above.\n"
+            f"2. Do NOT add cheat suppression comments (// ignore:).\n"
+            f"3. Return ONLY the repaired code block inside ```dart ... ``` followed by a 1-sentence explanation."
+        )
+
+        try:
+            headers = {"Authorization": f"Bearer {self.config.api_key}"}
+            payload = {
+                "model": self.config.repairer_model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 500,
+                "temperature": 0.1,
+                "stream": False,
+            }
+            with httpx.Client(timeout=self.config.request_timeout) as client:
+                res = client.post(f"{self.config.api_base}/chat/completions", json=payload, headers=headers)
+                if res.status_code == 200:
+                    text = res.json()["choices"][0]["message"]["content"]
+                    if "```dart" in text:
+                        code = text.split("```dart")[1].split("```")[0].strip()
+                        explanation = text.split("```")[-1].strip() or f"Remediate {finding.id} via Claude Sonnet"
+                        return code, explanation
+        except Exception:
+            pass
+        return None
+
     def generate_patch(self, finding: VulnerabilityFinding, use_llm: bool = False) -> PatchProposal:
         """Generates a virtual unified diff patch for the given finding."""
         original_snippet = finding.evidence.snippet
-        repaired_snippet, explanation = self._generate_synthetic_fix(finding)
+        repaired_snippet = None
+        explanation = None
+
+        if use_llm:
+            llm_res = self._generate_llm_fix(finding)
+            if llm_res:
+                repaired_snippet, explanation = llm_res
+
+        if not repaired_snippet:
+            repaired_snippet, explanation = self._generate_synthetic_fix(finding)
 
         # Generate standard unified diff
         orig_lines = original_snippet.splitlines(keepends=True)

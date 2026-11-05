@@ -30,6 +30,7 @@ class DetectorAgent:
                 "messages": [{"role": "user", "content": prompt}],
                 "max_tokens": 400,
                 "temperature": 0.2,
+                "stream": False,
             }
             with httpx.Client(timeout=self.config.request_timeout) as client:
                 res = client.post(f"{self.config.api_base}/chat/completions", json=payload, headers=headers)

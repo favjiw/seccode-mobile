@@ -9,9 +9,6 @@
 
 SecCode Mobile is an evidence-first, multi-agent cybersecurity pipeline specifically designed to identify, explain, and synthesize verified remediations for mobile vulnerabilities in Flutter codebases—with special focus on architectural security debt resulting from **vibe coding** (unsupervised AI code generation).
 
-Inspired by the robust multi-agent architecture of **MERITA (Explainable AI for Merit-Based Decisions - BPOM / APICTA 2026)**, SecCode Mobile enforces the foundational principle:
-> **"LLM Reasons and Explains; Deterministic Code Verifies and Scores."**
-
 ---
 
 ## 🏛️ Multi-Agent Architecture
